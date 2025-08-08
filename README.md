@@ -495,33 +495,88 @@ spring.datasource.hikari:
 ## 📁 프로젝트 구조
 
 ```
-simple-llm-backend\
-├── src\
-│   ├── main\
-│   │   ├── java\com\example\simple\
-│   │   │   ├── SimpleApplication.java
-│   │   │   ├── config\          # 설정 클래스
-│   │   │   ├── controller\      # REST 컨트롤러
-│   │   │   ├── service\         # 비즈니스 로직
-│   │   │   ├── dto\             # 데이터 전송 객체
-│   │   │   └── exception\       # 예외 처리
-│   │   └── resources\
-│   │       ├── application.yml          # 기본 설정
-│   │       ├── application-dev.yml      # 개발환경 설정
-│   │       ├── application-prod.yml     # 운영환경 설정
-│   │       └── logback-spring.xml      # 로깅 설정
-│   └── test\                    # 테스트 코드
-├── scripts\                     # 실행 스크립트
-│   ├── run.bat                  # 배치 실행 스크립트
-│   ├── run.ps1                  # PowerShell 실행 스크립트
-│   ├── test.bat                 # API 테스트 스크립트
-│   └── monitor.bat              # 모니터링 스크립트
-├── docker\                      # Docker 설정
-├── deployment\                  # 배포 설정
-├── logs\                        # 로그 파일
-├── build.gradle                 # Gradle 빌드 설정
-├── .env.example                 # 환경변수 예시
-└── README.md                    # 이 파일
+simple-llm-backend/
+├── .env.example                    # ✅ 환경변수 템플릿
+├── .gitignore
+├── README.md                       # ✅ 프로젝트 문서
+├── build.gradle                    # ✅ Gradle 빌드 설정
+├── gradle.properties               # ✅ Gradle 속성
+├── gradlew
+├── gradlew.bat
+├── settings.gradle                 # ✅ Gradle 설정
+│
+├── src/
+│   ├── main/
+│   │   ├── java/com/example/simple/
+│   │   │   ├── SimpleApplication.java           # ✅ 메인 애플리케이션
+│   │   │   ├── config/
+│   │   │   │   ├── LLMConfig.java              # ✅ Duration 타입 지원
+│   │   │   │   └── WebClientConfig.java        # ✅ WebClient 설정
+│   │   │   ├── controller/
+│   │   │   │   ├── ApiController.java          # ✅ 통합 API 컨트롤러
+│   │   │   │   ├── HealthController.java       # ✅ 헬스체크
+│   │   │   │   ├── LLMController.java          # ✅ LLM 컨트롤러
+│   │   │   │   └── StatsController.java        # ✅ 통계 컨트롤러
+│   │   │   ├── service/
+│   │   │   │   ├── LLMService.java             # ✅ LLM 서비스
+│   │   │   │   ├── LoggingService.java         # ✅ 로깅 서비스
+│   │   │   │   ├── SglangService.java          # ✅ SGLang 서비스
+│   │   │   │   └── VllmService.java            # ✅ vLLM 서비스
+│   │   │   ├── dto/
+│   │   │   │   ├── LLMRequest.java             # ✅ 요청 DTO
+│   │   │   │   └── LLMResponse.java            # ✅ 응답 DTO
+│   │   │   └── exception/
+│   │   │       └── GlobalExceptionHandler.java # ✅ 예외 처리
+│   │   └── resources/
+│   │       ├── application.yml                 # ✅ 수정됨 (context-path 제거)
+│   │       ├── application-dev.yml             # ✅ 개발환경 설정
+│   │       ├── application-prod.yml            # ✅ 운영환경 설정
+│   │       ├── logback-spring.xml              # ✅ 로깅 설정
+│   │       └── sql/
+│   │           ├── schema.sql                  # ✅ H2 스키마
+│   │           └── data.sql                    # ✅ 테스트 데이터
+│   └── test/
+│       └── java/com/example/simple/
+│           ├── SimpleApplicationTests.java     # ✅ 애플리케이션 테스트
+│           ├── config/
+│           │   └── LLMConfigTest.java          # ✅ 수정됨 (Duration 지원)
+│           ├── controller/
+│           │   ├── HealthControllerTest.java   # ✅ 헬스체크 테스트
+│           │   └── LLMControllerTest.java      # ✅ LLM 컨트롤러 테스트
+│           ├── service/
+│           │   ├── LLMServiceTest.java         # ✅ LLM 서비스 테스트
+│           │   ├── SglangServiceTest.java      # ✅ SGLang 서비스 테스트
+│           │   └── VllmServiceTest.java        # ✅ vLLM 서비스 테스트
+│           └── integration/
+│               └── LLMIntegrationTest.java     # ✅ 통합 테스트
+│
+├── scripts/                        # ✅ 실행 스크립트
+│   ├── run.bat                     # ✅ 수정됨 (환경변수 처리 개선)
+│   ├── run.ps1                     # ✅ 수정됨 (매개변수 지원)
+│   ├── test.bat                    # ✅ API 테스트
+│   ├── test.ps1                    # ✅ PowerShell API 테스트
+│   ├── comprehensive-test.ps1      # ✅ 수정됨 (종합 테스트)
+│   ├── run-tests.ps1               # ✅ 단위 테스트 실행
+│   ├── monitor.bat                 # ✅ 모니터링 스크립트
+│   └── quick-start.bat             # ✅ 새로 추가 (빠른 시작)
+│
+├── docker/                         # ✅ 새로 추가
+│   ├── Dockerfile                  # ✅ 멀티스테이지 빌드
+│   ├── docker-compose.yml          # ✅ 전체 스택 구성
+│   ├── nginx/
+│   │   ├── nginx.conf              # ✅ 리버스 프록시 설정
+│   │   └── generate-ssl.sh         # ✅ SSL 인증서 생성
+│   └── oracle-init/
+│       └── 01-init.sql             # ✅ Oracle DB 초기화
+│
+├── deployment/                     # ✅ 배포 설정
+│   ├── install-service.bat         # ✅ Windows 서비스 설치
+│   ├── uninstall-service.bat       # ✅ 새로 추가 (서비스 제거)
+│   ├── windows-service.xml         # ✅ WinSW 설정
+│   └── simple-llm-backend.service  # ✅ Linux 서비스 (참조용)
+│
+└── logs/                           # ✅ 로그 디렉토리 (자동 생성)
+    └── simple-llm-backend.log
 ```
 
 ### 개발 환경 설정

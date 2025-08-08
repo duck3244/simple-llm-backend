@@ -1,7 +1,6 @@
 server:
   port: ${SERVER_PORT:8080}
-  servlet:
-    context-path: /api
+  # context-path 제거로 README와 일치하는 URL 구조 구현
 
 spring:
   application:
@@ -17,6 +16,12 @@ spring:
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
     driver-class-name: ${DB_DRIVER:org.h2.Driver}
+    hikari:
+      maximum-pool-size: ${DB_MAX_POOL_SIZE:10}
+      minimum-idle: ${DB_MIN_IDLE:2}
+      idle-timeout: ${DB_IDLE_TIMEOUT:300000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:20000}
     
   jpa:
     hibernate:
@@ -25,12 +30,22 @@ spring:
     properties:
       hibernate:
         dialect: ${JPA_DIALECT:org.hibernate.dialect.H2Dialect}
+        format_sql: ${JPA_FORMAT_SQL:false}
+        use_sql_comments: ${JPA_USE_SQL_COMMENTS:false}
         
   # H2 웹 콘솔 (개발용)
   h2:
     console:
       enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
+      settings:
+        web-allow-others: ${H2_WEB_ALLOW_OTHERS:false}
+
+  # 파일 업로드 설정
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:10MB}
+      max-request-size: ${MAX_REQUEST_SIZE:20MB}
 
 # LLM 엔진 설정
 llm:
@@ -57,25 +72,62 @@ llm:
 logging:
   level:
     com.example.simple: ${LOG_LEVEL:INFO}
+    org.springframework.web: ${WEB_LOG_LEVEL:WARN}
+    org.springframework.security: ${SECURITY_LOG_LEVEL:WARN}
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_PARAM_LOG_LEVEL:WARN}
   file:
     name: ${LOG_FILE_PATH:logs/simple-llm-backend.log}
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 # Spring Boot Actuator
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: ${ACTUATOR_ENDPOINTS:health,info,metrics}
       base-path: /actuator
   endpoint:
     health:
-      show-details: when-authorized
+      show-details: ${HEALTH_SHOW_DETAILS:when-authorized}
+      show-components: ${HEALTH_SHOW_COMPONENTS:when-authorized}
+  info:
+    env:
+      enabled: ${INFO_ENV_ENABLED:true}
 
 # 애플리케이션 정보
 info:
   app:
     name: Simple LLM Backend
     version: 0.0.1-SNAPSHOT
-    description: LLM 추론 테스트 백엔드
+    description: LLM 추론 테스트 백엔드 - Windows 10 Pro 환경용
     java-version: ${java.version}
     spring-boot-version: 2.3.2.RELEASE
+    build-time: ${maven.build.timestamp:unknown}
+  system:
+    os-name: ${os.name}
+    os-version: ${os.version}
+    os-arch: ${os.arch}
+
+# CORS 설정
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8080,http://127.0.0.1:3000,http://127.0.0.1:8080}
+  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
+  allowed-headers: ${CORS_ALLOWED_HEADERS:*}
+  allow-credentials: ${CORS_ALLOW_CREDENTIALS:true}
+  max-age: ${CORS_MAX_AGE:3600}
+
+# 기능 플래그
+feature:
+  flags:
+    enable-mock-responses: ${ENABLE_MOCK:false}
+    enable-detailed-logging: ${ENABLE_DETAILED_LOGGING:false}
+    enable-debug-endpoints: ${ENABLE_DEBUG_ENDPOINTS:false}
+
+# 보안 설정
+security:
+  jwt:
+    secret: ${JWT_SECRET:default-secret-key-change-in-production}
+    expiration: ${JWT_EXPIRATION:86400000}
