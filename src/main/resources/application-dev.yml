@@ -1,0 +1,270 @@
+# application-dev.yml - 개발환경 설정 파일
+# Windows 10 Pro + Java 11 + Spring Boot 2.3.2 환경용
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  # 개발환경에서 더 상세한 에러 정보 표시
+  error:
+    include-exception: true
+    include-stacktrace: always
+    include-message: always
+
+spring:
+  profiles: dev
+  
+  application:
+    name: simple-llm-backend-dev
+    
+  # 개발용 데이터베이스 설정 (H2 인메모리 DB)
+  datasource:
+    # H2 인메모리 데이터베이스 (개발/테스트용)
+    url: jdbc:h2:mem:devdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=Oracle
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      
+    # Oracle 데이터베이스 사용시 (선택사항 - 주석 해제하여 사용)
+    # url: jdbc:oracle:thin:@${DB_HOST:localhost}:${DB_PORT:1521}:${DB_SID:XE}
+    # username: ${DB_USERNAME:llmchat_dev}
+    # password: ${DB_PASSWORD:dev_password}
+    # driver-class-name: oracle.jdbc.OracleDriver
+    
+  jpa:
+    hibernate:
+      # 개발환경에서는 테이블 자동 생성/업데이트
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        # H2 사용시
+        dialect: org.hibernate.dialect.H2Dialect
+        # Oracle 사용시 (위의 Oracle 설정 활성화 시)
+        # dialect: org.hibernate.dialect.Oracle10gDialect
+        format_sql: true
+        use_sql_comments: true
+        # 개발환경에서 성능보다는 가독성 우선
+        jdbc:
+          batch_size: 10
+        order_inserts: false
+        order_updates: false
+        
+  # H2 웹 콘솔 활성화 (개발용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+        trace: false
+        
+  # Redis 설정 (개발환경)
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 5
+        max-idle: 5
+        min-idle: 1
+        max-wait: 2000ms
+    
+  # 파일 업로드 설정
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+      
+  # 개발환경에서 캐시 비활성화
+  cache:
+    type: none
+    
+  # 개발환경 보안 설정 (느슨한 설정)
+  security:
+    jwt:
+      secret: ${JWT_SECRET:dev-secret-key-for-development-only-not-for-production-use}
+      expiration: 86400000 # 24 hours (개발환경에서는 길게 설정)
+
+# LLM 엔진 설정 (개발환경)
+llm:
+  vllm:
+    enabled: ${VLLM_ENABLED:true}
+    base-url: ${VLLM_BASE_URL:http://localhost:8000}
+    timeout: 10  # 개발환경에서는 짧은 타임아웃
+    max-tokens: 256  # 개발환경에서는 작은 토큰 수
+    temperature: 0.7
+    
+  sglang:
+    enabled: ${SGLANG_ENABLED:true}
+    base-url: ${SGLANG_BASE_URL:http://localhost:30000}
+    timeout: 10  # 개발환경에서는 짧은 타임아웃
+    max-tokens: 256  # 개발환경에서는 작은 토큰 수
+    temperature: 0.7
+    
+  # 개발환경에서 페일오버 비활성화 (빠른 실패)
+  failover:
+    enabled: false
+    retry-attempts: 1
+
+# 로깅 설정 (개발환경 - 상세 로그)
+logging:
+  level:
+    root: INFO
+    com.example.simple: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web.reactive.function.client: DEBUG
+    # HTTP 클라이언트 요청/응답 로깅
+    reactor.netty.http.client: DEBUG
+    
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    
+  file:
+    name: logs/simple-llm-backend-dev.log
+    
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 7
+      
+# Spring Boot Actuator 설정 (개발환경 - 모든 엔드포인트 노출)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # 개발환경에서는 모든 엔드포인트 노출
+      base-path: /actuator
+      cors:
+        allowed-origins: "*"
+        allowed-methods: "*"
+        
+  endpoint:
+    health:
+      show-details: always  # 상세 헬스체크 정보 표시
+      show-components: always
+    env:
+      show-values: always  # 환경변수 값 표시 (개발환경만)
+    configprops:
+      show-values: always  # 설정 프로퍼티 값 표시
+      
+  info:
+    env:
+      enabled: true
+    git:
+      mode: full
+      
+  # JMX 활성화 (개발환경 모니터링용)
+  jmx:
+    exposure:
+      include: "*"
+
+# 개발환경 전용 정보
+info:
+  app:
+    name: Simple LLM Backend
+    version: 0.0.1-SNAPSHOT
+    environment: development
+    description: LLM 추론 테스트 백엔드 - 개발환경
+    java-version: ${java.version}
+    spring-boot-version: 2.3.2.RELEASE
+  build:
+    time: ${maven.build.timestamp:unknown}
+    
+# 개발환경 디버깅 설정
+debug: false  # true로 설정하면 더 상세한 디버그 정보 출력
+
+# 개발환경 성능 설정
+spring.jpa.properties.hibernate.jdbc.time_zone: UTC
+
+# CORS 설정 (개발환경 - 느슨한 설정)
+cors:
+  allowed-origins: 
+    - http://localhost:3000    # React 개발 서버
+    - http://localhost:8080    # 백엔드 서버
+    - http://localhost:5173    # Vite 개발 서버
+    - http://127.0.0.1:3000
+    - http://127.0.0.1:8080
+  allowed-methods: 
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+  max-age: 3600
+
+# 개발환경 전용 기능 플래그
+feature:
+  flags:
+    enable-mock-responses: ${ENABLE_MOCK:false}  # Mock 응답 활성화
+    enable-detailed-logging: true                # 상세 로깅 활성화
+    enable-debug-endpoints: true                 # 디버그 엔드포인트 활성화
+    
+# 개발환경 데이터베이스 초기화 (H2 사용시)
+spring.sql.init.mode: always
+spring.sql.init.data-locations: classpath:data-dev.sql
+spring.sql.init.schema-locations: classpath:schema-dev.sql
+
+# Windows 개발환경 특화 설정
+windows:
+  dev:
+    file-path-separator: "\\"
+    temp-directory: ${java.io.tmpdir}
+    log-directory: "./logs"
+    
+# 개발자 편의 설정
+dev:
+  tools:
+    auto-reload: true
+    hot-swap: true
+    
+  mock:
+    # 실제 LLM 서버가 없을 때 사용할 Mock 응답
+    vllm-response: "This is a mock response from vLLM for development."
+    sglang-response: "This is a mock response from SGLang for development."
+    
+  # 개발환경 테스트 데이터
+  test-data:
+    sample-prompts:
+      - "Hello, world!"
+      - "What is artificial intelligence?"
+      - "Explain machine learning in simple terms."
+      - "Write a simple Python function."
+    
+    sample-responses:
+      - "Hello! How can I help you today?"
+      - "Artificial intelligence is..."
+      - "Machine learning is a subset of AI..."
+      - "def example_function():"
+
+# JVM 최적화 (개발환경)
+# 실제 JVM 옵션은 실행 스크립트에서 설정
+jvm:
+  dev:
+    recommended-options:
+      - "-Xms256m"
+      - "-Xmx1g"
+      - "-XX:+UseG1GC"
+      - "-Dfile.encoding=UTF-8"
+      - "-Djava.awt.headless=true"
+      
+# 개발환경 네트워크 설정
+network:
+  dev:
+    connection-timeout: 5000
+    read-timeout: 10000
+    max-connections: 10

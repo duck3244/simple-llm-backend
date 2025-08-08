@@ -1,0 +1,79 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '2.3.2.RELEASE'
+    id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Starters (2.3.2 compatible)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Oracle JDBC 7 (Windows compatible)
+    implementation 'com.oracle.ojdbc:ojdbc7:12.1.0.2'
+    
+    // JSON Processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    
+    // Configuration Properties
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // H2 for testing
+    runtimeOnly 'com.h2database:h2'
+    
+    // Testing
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// Windows 경로 처리
+task createWindowsDistribution(type: Zip) {
+    archiveFileName = "${project.name}-${project.version}-windows.zip"
+    destinationDirectory = file("$buildDir/distributions")
+    
+    from('scripts') {
+        into 'scripts'
+        include '*.bat', '*.ps1'
+    }
+    
+    from('deployment') {
+        into 'deployment'
+    }
+    
+    from("$buildDir/libs") {
+        into 'lib'
+        include '*.jar'
+    }
+}
+
+build.dependsOn createWindowsDistribution

@@ -1,0 +1,26 @@
+<service>
+    <id>SimpleLLMBackend</id>
+    <name>Simple LLM Backend Service</name>
+    <description>Simple LLM Backend REST API Service</description>
+    
+    <executable>java</executable>
+    <arguments>-Xms512m -Xmx2g -XX:+UseG1GC -Dfile.encoding=UTF-8 -jar simple-llm-backend-0.0.1-SNAPSHOT.jar</arguments>
+    
+    <workingdirectory>%BASE%</workingdirectory>
+    
+    <env name="SPRING_PROFILES_ACTIVE" value="prod"/>
+    <env name="VLLM_BASE_URL" value="http://localhost:8000"/>
+    <env name="SGLANG_BASE_URL" value="http://localhost:30000"/>
+    
+    <logpath>%BASE%\logs</logpath>
+    <log mode="roll-by-size">
+        <sizeThreshold>10MB</sizeThreshold>
+        <keepFiles>8</keepFiles>
+    </log>
+    
+    <onfailure action="restart" delay="10 sec"/>
+    <onfailure action="restart" delay="20 sec"/>
+    <onfailure action="none"/>
+    
+    <resetfailure>1 hour</resetfailure>
+</service>

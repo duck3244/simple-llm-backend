@@ -1,0 +1,12 @@
+[Unit]
+Description=Simple LLM Backend Service
+After=network.target
+
+[Service]
+Type=forking
+User=llmuser
+ExecStart=/opt/simple-llm-backend/run.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,72 @@
+simple-llm-backend\
+├── gradle\
+│   └── wrapper\
+│       ├── gradle-wrapper.jar
+│       └── gradle-wrapper.properties
+├── src\
+│   ├── main\
+│   │   ├── java\
+│   │   │   └── com\
+│   │   │       └── example\
+│   │   │           └── simple\
+│   │   │               ├── SimpleApplication.java
+│   │   │               ├── config\
+│   │   │               │   ├── LLMConfig.java
+│   │   │               │   └── WebClientConfig.java
+│   │   │               ├── controller\
+│   │   │               │   ├── LLMController.java
+│   │   │               │   ├── HealthController.java
+│   │   │               │   └── StatsController.java
+│   │   │               ├── service\
+│   │   │               │   ├── LLMService.java
+│   │   │               │   ├── VllmService.java
+│   │   │               │   ├── SglangService.java
+│   │   │               │   └── LoggingService.java
+│   │   │               ├── dto\
+│   │   │               │   ├── LLMRequest.java
+│   │   │               │   └── LLMResponse.java
+│   │   │               └── exception\
+│   │   │                   └── GlobalExceptionHandler.java
+│   │   └── resources\
+│   │       ├── application.yml
+│   │       ├── application-dev.yml
+│   │       ├── application-prod.yml
+│   │       ├── logback-spring.xml
+│   │       └── sql\
+│   │           ├── schema.sql
+│   │           └── data.sql
+│   └── test\
+│       └── java\
+│           └── com\
+│               └── example\
+│                   └── simple\
+│                       ├── SimpleApplicationTests.java
+│                       ├── controller\
+│                       │   └── LLMControllerTest.java
+│                       └── service\
+│                           ├── VllmServiceTest.java
+│                           └── SglangServiceTest.java
+├── scripts\
+│   ├── run.bat
+│   ├── run.ps1
+│   ├── test.bat
+│   ├── test.ps1
+│   ├── comprehensive-test.bat
+│   ├── comprehensive-test.ps1
+│   └── monitor.bat
+├── docker\
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── deployment\
+│   ├── windows-service.xml
+│   └── install-service.bat
+├── logs\
+│   └── .gitkeep
+├── build.gradle
+├── gradle.properties
+├── gradlew
+├── gradlew.bat
+├── settings.gradle
+├── .env.example
+├── .gitignore
+└── README.md

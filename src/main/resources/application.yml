@@ -1,0 +1,46 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: simple-llm-backend
+    
+  # Oracle 데이터베이스 설정 (선택사항)
+  datasource:
+    url: jdbc:oracle:thin:@${DB_HOST:localhost}:${DB_PORT:1521}:${DB_SID:XE}
+    username: ${DB_USERNAME:llmchat}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: oracle.jdbc.OracleDriver
+    
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.Oracle10gDialect
+        
+  # H2 데이터베이스 (테스트용)
+  h2:
+    console:
+      enabled: true
+
+llm:
+  vllm:
+    enabled: ${VLLM_ENABLED:true}
+    base-url: ${VLLM_BASE_URL:http://localhost:8000}
+    timeout: 30
+    max-tokens: 512
+    temperature: 0.7
+    
+  sglang:
+    enabled: ${SGLANG_ENABLED:true}
+    base-url: ${SGLANG_BASE_URL:http://localhost:30000}
+    timeout: 30
+    max-tokens: 512
+    temperature: 0.7
+
+logging:
+  level:
+    com.example.simple: DEBUG
+    org.springframework.web.reactive: DEBUG
