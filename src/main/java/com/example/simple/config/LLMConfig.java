@@ -13,6 +13,7 @@ public class LLMConfig {
     
     private VllmConfig vllm = new VllmConfig();
     private SglangConfig sglang = new SglangConfig();
+    private FailoverConfig failover = new FailoverConfig();
     
     @Data
     public static class VllmConfig {
@@ -30,5 +31,12 @@ public class LLMConfig {
         private Duration timeout = Duration.ofSeconds(30);
         private int maxTokens = 512;
         private double temperature = 0.7;
+    }
+    
+    @Data
+    public static class FailoverConfig {
+        private boolean enabled = false;
+        private int retryAttempts = 3;
+        private Duration retryDelay = Duration.ofSeconds(1);
     }
 }

@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '2.3.2.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+    id 'jacoco'
 }
 
 group = 'com.example'
@@ -28,6 +29,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     
     // Oracle JDBC 7 (Windows compatible)
     implementation 'com.oracle.ojdbc:ojdbc7:12.1.0.2'
@@ -50,13 +52,23 @@ dependencies {
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
 }
 
 test {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
 }
 
-// Windows 경로 처리
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.enabled true
+        html.enabled true
+    }
+}
+
+// Windows 경로 처리 및 배포 태스크
 task createWindowsDistribution(type: Zip) {
     archiveFileName = "${project.name}-${project.version}-windows.zip"
     destinationDirectory = file("$buildDir/distributions")
@@ -74,6 +86,26 @@ task createWindowsDistribution(type: Zip) {
         into 'lib'
         include '*.jar'
     }
+    
+    from('.') {
+        include '.env.example'
+        include 'README.md'
+        include 'docker/**/*'
+    }
+}
+
+// 통합 테스트 실행
+task integrationTest(type: Test) {
+    useJUnitPlatform()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    include '**/*IntegrationTest*'
+}
+
+// 코드 품질 검사
+task codeQuality {
+    dependsOn test, jacocoTestReport
+    description = 'Runs all code quality checks'
 }
 
 build.dependsOn createWindowsDistribution

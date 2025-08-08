@@ -1,46 +1,81 @@
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
 
 spring:
   application:
     name: simple-llm-backend
     
-  # Oracle 데이터베이스 설정 (선택사항)
+  # 프로필 기본값
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+    
+  # 공통 데이터베이스 설정
   datasource:
-    url: jdbc:oracle:thin:@${DB_HOST:localhost}:${DB_PORT:1521}:${DB_SID:XE}
-    username: ${DB_USERNAME:llmchat}
-    password: ${DB_PASSWORD:password}
-    driver-class-name: oracle.jdbc.OracleDriver
+    url: ${DATABASE_URL:jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=Oracle}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
     
   jpa:
     hibernate:
-      ddl-auto: none
-    show-sql: false
+      ddl-auto: ${JPA_DDL_AUTO:create-drop}
+    show-sql: ${JPA_SHOW_SQL:false}
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.Oracle10gDialect
+        dialect: ${JPA_DIALECT:org.hibernate.dialect.H2Dialect}
         
-  # H2 데이터베이스 (테스트용)
+  # H2 웹 콘솔 (개발용)
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:true}
+      path: /h2-console
 
+# LLM 엔진 설정
 llm:
   vllm:
     enabled: ${VLLM_ENABLED:true}
     base-url: ${VLLM_BASE_URL:http://localhost:8000}
-    timeout: 30
-    max-tokens: 512
-    temperature: 0.7
+    timeout: ${VLLM_TIMEOUT:30s}
+    max-tokens: ${VLLM_MAX_TOKENS:512}
+    temperature: ${VLLM_TEMPERATURE:0.7}
     
   sglang:
     enabled: ${SGLANG_ENABLED:true}
     base-url: ${SGLANG_BASE_URL:http://localhost:30000}
-    timeout: 30
-    max-tokens: 512
-    temperature: 0.7
+    timeout: ${SGLANG_TIMEOUT:30s}
+    max-tokens: ${SGLANG_MAX_TOKENS:512}
+    temperature: ${SGLANG_TEMPERATURE:0.7}
+    
+  failover:
+    enabled: ${LLM_FAILOVER_ENABLED:false}
+    retry-attempts: ${LLM_RETRY_ATTEMPTS:3}
+    retry-delay: ${LLM_RETRY_DELAY:1s}
 
+# 로깅 설정
 logging:
   level:
-    com.example.simple: DEBUG
-    org.springframework.web.reactive: DEBUG
+    com.example.simple: ${LOG_LEVEL:INFO}
+  file:
+    name: ${LOG_FILE_PATH:logs/simple-llm-backend.log}
+
+# Spring Boot Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+
+# 애플리케이션 정보
+info:
+  app:
+    name: Simple LLM Backend
+    version: 0.0.1-SNAPSHOT
+    description: LLM 추론 테스트 백엔드
+    java-version: ${java.version}
+    spring-boot-version: 2.3.2.RELEASE

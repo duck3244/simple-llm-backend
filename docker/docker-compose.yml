@@ -1,9 +1,78 @@
-version: '3.7'
+version: '3.8'
+
 services:
   simple-llm-backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: simple-llm-backend
     ports:
       - "8080:8080"
     environment:
-      - VLLM_BASE_URL=http://host.docker.internal:8000
-      - SGLANG_BASE_URL=http://host.docker.internal:30000
+      - SPRING_PROFILES_ACTIVE=prod
+      - VLLM_BASE_URL=http://vllm:8000
+      - SGLANG_BASE_URL=http://sglang:30000
+      - DB_HOST=oracle-db
+      - DB_USERNAME=llmchat
+      - DB_PASSWORD=llmchat123
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - llm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-db
+    environment:
+      - ORACLE_PASSWORD=oracle123
+      - APP_USER=llmchat
+      - APP_USER_PASSWORD=llmchat123
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+      - ./sql/init.sql:/container-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - llm-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # vLLM service (optional - if you want to include it)
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    ports:
+      - "8000:8000"
+    command: ["--model", "microsoft/DialoGPT-medium", "--host", "0.0.0.0", "--port", "8000"]
+    networks:
+      - llm-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  oracle_data:
+
+networks:
+  llm-network:
+    driver: bridge

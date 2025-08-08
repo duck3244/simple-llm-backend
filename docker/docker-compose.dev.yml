@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  simple-llm-backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: simple-llm-backend-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - VLLM_ENABLED=false
+      - SGLANG_ENABLED=false
+    volumes:
+      - ./logs:/app/logs
+      - ../src:/app/src:ro  # Source code mounting for development
+    networks:
+      - llm-dev-network
+    restart: unless-stopped
+
+networks:
+  llm-dev-network:
+    driver: bridge
