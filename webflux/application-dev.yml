@@ -1,0 +1,248 @@
+# application-dev.yml - 개발환경 설정 파일 (토큰 계산 기능 추가)
+# Windows 10 Pro + Java 11 + Spring Boot 2.3.2 환경용
+
+server:
+  port: 8080
+  error:
+    include-exception: true
+    include-stacktrace: always
+    include-message: always
+
+spring:
+  profiles: dev
+  
+  application:
+    name: simple-llm-backend-dev
+    
+  # 개발용 데이터베이스 설정 (H2 인메모리 DB)
+  datasource:
+    url: jdbc:h2:mem:devdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=Oracle
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 10
+        order_inserts: false
+        order_updates: false
+        
+  # H2 웹 콘솔 활성화 (개발용)
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+        trace: false
+        
+  # 캐싱 설정 (토큰 계산 결과 캐싱)
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=1h
+    cache-names:
+      - tokenCalculation
+      - modelEncodings
+
+# LLM 엔진 설정 (개발환경)
+llm:
+  vllm:
+    enabled: ${VLLM_ENABLED:true}
+    base-url: ${VLLM_BASE_URL:http://localhost:8000}
+    timeout: 10s
+    max-tokens: 256
+    temperature: 0.7
+    
+  sglang:
+    enabled: ${SGLANG_ENABLED:true}
+    base-url: ${SGLANG_BASE_URL:http://localhost:30000}
+    timeout: 10s
+    max-tokens: 256
+    temperature: 0.7
+    
+  failover:
+    enabled: false
+    retry-attempts: 1
+
+# 토큰 계산 설정
+token-calculation:
+  # 로컬 토큰 계산 설정
+  local:
+    enabled: true
+    default-encoding: cl100k_base
+    parallel-threads: 2  # 개발환경에서는 적은 스레드 사용
+    max-text-length: 50000  # 개발환경에서는 작은 제한
+    
+  # 외부 API 설정 (개발환경에서는 비활성화)
+  external:
+    enabled: ${TOKEN_EXTERNAL_ENABLED:false}
+    timeout: 10s
+    retry-attempts: 2
+    concurrency-limit: 3
+    
+    # Hugging Face API 설정
+    hugging-face:
+      enabled: false
+      base-url: https://api-inference.huggingface.co
+      api-token: ${HUGGINGFACE_API_TOKEN:}
+      timeout: 15s
+      
+    # OpenAI API 설정
+    open-ai:
+      enabled: false
+      base-url: https://api.openai.com/v1
+      api-token: ${OPENAI_API_TOKEN:}
+      timeout: 10s
+      
+  # 캐싱 설정
+  cache:
+    enabled: true
+    expire-after-write: 30m  # 개발환경에서는 짧은 캐시 시간
+    maximum-size: 1000
+    record-stats: true
+    
+  # 비용 계산 설정
+  cost:
+    model-costs:
+      gpt-3.5-turbo:
+        input-cost-per1-k: 0.0015
+        output-cost-per1-k: 0.002
+      gpt-4:
+        input-cost-per1-k: 0.03
+        output-cost-per1-k: 0.06
+      gpt-4-turbo:
+        input-cost-per1-k: 0.01
+        output-cost-per1-k: 0.03
+      claude-3-haiku:
+        input-cost-per1-k: 0.00025
+        output-cost-per1-k: 0.00125
+      claude-3-sonnet:
+        input-cost-per1-k: 0.003
+        output-cost-per1-k: 0.015
+      claude-3-opus:
+        input-cost-per1-k: 0.015
+        output-cost-per1-k: 0.075
+    default-cost:
+      input-cost-per1-k: 0.002
+      output-cost-per1-k: 0.002
+
+# 로깅 설정 (개발환경 - 상세 로그)
+logging:
+  level:
+    root: INFO
+    com.example.simple: DEBUG
+    com.example.simple.service.LocalTokenCalculationService: DEBUG
+    com.example.simple.service.IntegratedTokenCalculationService: DEBUG
+    com.example.simple.controller.TokenController: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.cache: DEBUG
+    # 토큰 계산 관련 상세 로깅
+    com.knuddels.jtokkit: DEBUG
+    
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    
+  file:
+    name: logs/simple-llm-backend-dev.log
+    
+# Spring Boot Actuator 설정 (개발환경)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: /actuator
+        
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    caches:
+      enabled: true  # 캐시 모니터링 활성화
+      
+# 개발환경 전용 정보
+info:
+  app:
+    name: Simple LLM Backend with Token Calculation
+    version: 0.0.1-SNAPSHOT
+    environment: development
+    description: LLM 추론 + 토큰 계산 백엔드 - 개발환경
+    features:
+      - LLM Integration (vLLM, SGLang)
+      - Token Calculation (Local Tiktoken)
+      - Cost Estimation
+      - Token Limits Validation
+      - Batch Processing
+      - Caching
+    
+# 개발환경 기능 플래그
+feature:
+  flags:
+    enable-token-calculation: true
+    enable-token-caching: true
+    enable-batch-processing: true
+    enable-cost-estimation: true
+    enable-external-tokenizer: ${TOKEN_EXTERNAL_ENABLED:false}
+    enable-detailed-logging: true
+    enable-debug-endpoints: true
+    
+# 개발환경 토큰 제한값
+token-limits:
+  max-tokens-per-request: 4096
+  max-cost-per-request: 0.50  # $0.50
+  max-tokens-per-user-daily: 50000
+  max-requests-per-minute: 60
+  
+# JVM 최적화 (개발환경)
+jvm:
+  dev:
+    recommended-options:
+      - "-Xms256m"
+      - "-Xmx1g"
+      - "-XX:+UseG1GC"
+      - "-Dfile.encoding=UTF-8"
+      - "-Djava.awt.headless=true"
+
+# 개발자 편의 설정
+dev:
+  tools:
+    auto-reload: true
+    hot-swap: true
+    
+  # Mock 설정 (실제 서버가 없을 때 사용)
+  mock:
+    vllm-response: "This is a mock response from vLLM for development."
+    sglang-response: "This is a mock response from SGLang for development."
+    token-count: 50  # Mock 토큰 수
+    
+  # 개발환경 테스트 데이터
+  test-data:
+    sample-prompts:
+      - "Hello, world!"
+      - "What is artificial intelligence?"
+      - "Explain machine learning in simple terms."
+      - "Write a simple Python function to calculate fibonacci numbers."
+      - "이것은 한국어 테스트 프롬프트입니다. 토큰 계산이 정확한지 확인해보세요."
+    
+    expected-token-counts:
+      - 3
+      - 6
+      - 9
+      - 12
+      - 15
