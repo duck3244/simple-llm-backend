@@ -598,14 +598,7 @@ simple-llm-backend/
 
 이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-## 📞 지원 및 문의
-
-### 문서 및 리소스
-- **API 문서**: http://localhost:8080/api/actuator
-- **GitHub Issues**: 버그 리포트 및 기능 요청
-- **Wiki**: 상세한 사용법 및 예제
-
-### 문제 해결
+## 문제 해결
 1. 먼저 이 README의 [문제 해결](#-문제-해결) 섹션 확인
 2. GitHub Issues에서 유사한 문제 검색
 3. 새로운 이슈 생성 시 다음 정보 포함:
