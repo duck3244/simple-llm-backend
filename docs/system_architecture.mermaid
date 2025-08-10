@@ -1,0 +1,134 @@
+graph TB
+    subgraph "클라이언트 계층"
+        CLI[CLI 도구]
+        WEB[웹 브라우저]
+        API_CLIENT[API 클라이언트]
+    end
+
+    subgraph "프록시/로드밸런서"
+        NGINX[Nginx<br/>리버스 프록시]
+    end
+
+    subgraph "Simple LLM Backend<br/>(Spring Boot 2.3.2 + Java 11)"
+        subgraph "컨트롤러 계층"
+            API_CTRL[ApiController<br/>/api/*]
+            HEALTH_CTRL[HealthController<br/>/api/health/*]
+            STATS_CTRL[StatsController<br/>/api/stats]
+        end
+
+        subgraph "서비스 계층"
+            LLM_SVC[LLMService<br/>추론 로직]
+            VLLM_SVC[VllmService<br/>vLLM 연동]
+            SGLANG_SVC[SglangService<br/>SGLang 연동]
+            LOG_SVC[LoggingService<br/>DB 로깅]
+        end
+
+        subgraph "설정 계층"
+            LLM_CFG[LLMConfig<br/>LLM 엔진 설정]
+            WEB_CFG[WebClientConfig<br/>HTTP 클라이언트]
+        end
+
+        subgraph "데이터 계층"
+            DTO[DTO Classes<br/>LLMRequest/Response]
+            EXCEPTION[GlobalExceptionHandler<br/>예외 처리]
+        end
+    end
+
+    subgraph "외부 LLM 서버"
+        VLLM[vLLM Server<br/>:8000/v1/completions]
+        SGLANG[SGLang Server<br/>:30000/generate]
+    end
+
+    subgraph "데이터베이스"
+        subgraph "개발환경"
+            H2[H2 Database<br/>인메모리]
+        end
+        subgraph "운영환경"
+            ORACLE[Oracle 12c<br/>영구 저장]
+        end
+    end
+
+    subgraph "모니터링 & 관리"
+        ACTUATOR[Spring Actuator<br/>/actuator/*]
+        LOGS[로그 파일<br/>logs/*.log]
+        METRICS[시스템 메트릭]
+    end
+
+    subgraph "배포 환경"
+        subgraph "Windows 서비스"
+            WINSW[WinSW<br/>서비스 래퍼]
+            BAT[배치 스크립트<br/>scripts/*.bat]
+        end
+        subgraph "Docker (선택사항)"
+            DOCKER[Docker Container]
+            COMPOSE[Docker Compose]
+        end
+    end
+
+    %% 클라이언트 연결
+    CLI --> NGINX
+    WEB --> NGINX
+    API_CLIENT --> NGINX
+
+    %% 프록시 연결
+    NGINX --> API_CTRL
+    NGINX --> HEALTH_CTRL
+    NGINX --> STATS_CTRL
+
+    %% 컨트롤러-서비스 연결
+    API_CTRL --> LLM_SVC
+    HEALTH_CTRL --> LLM_CFG
+    STATS_CTRL --> LOG_SVC
+
+    %% 서비스 간 연결
+    LLM_SVC --> VLLM_SVC
+    LLM_SVC --> SGLANG_SVC
+    LLM_SVC --> LOG_SVC
+
+    %% 외부 서버 연결
+    VLLM_SVC -.->|HTTP| VLLM
+    SGLANG_SVC -.->|HTTP| SGLANG
+
+    %% 데이터베이스 연결
+    LOG_SVC -.->|JDBC| H2
+    LOG_SVC -.->|JDBC| ORACLE
+    STATS_CTRL -.->|JdbcTemplate| H2
+    STATS_CTRL -.->|JdbcTemplate| ORACLE
+
+    %% 설정 및 DTO 연결
+    VLLM_SVC --> LLM_CFG
+    SGLANG_SVC --> LLM_CFG
+    VLLM_SVC --> WEB_CFG
+    SGLANG_SVC --> WEB_CFG
+
+    API_CTRL --> DTO
+    LLM_SVC --> DTO
+    API_CTRL --> EXCEPTION
+
+    %% 모니터링 연결
+    API_CTRL --> ACTUATOR
+    LLM_SVC --> LOGS
+    LOG_SVC --> METRICS
+
+    %% 배포 연결
+    WINSW -.->|관리| API_CTRL
+    BAT -.->|실행| API_CTRL
+    DOCKER -.->|컨테이너화| API_CTRL
+    COMPOSE -.->|오케스트레이션| DOCKER
+
+    %% 스타일링
+    classDef client fill:#e3f2fd
+    classDef proxy fill:#f3e5f5
+    classDef backend fill:#e8f5e8
+    classDef external fill:#fff3e0
+    classDef database fill:#fce4ec
+    classDef monitoring fill:#f1f8e9
+    classDef deployment fill:#ede7f6
+
+    class CLI,WEB,API_CLIENT client
+    class NGINX proxy
+    class API_CTRL,HEALTH_CTRL,STATS_CTRL,LLM_SVC,VLLM_SVC,SGLANG_SVC,LOG_SVC,LLM_CFG,WEB_CFG,DTO,EXCEPTION backend
+    class VLLM,SGLANG external
+    class H2,ORACLE database
+    class ACTUATOR,LOGS,METRICS monitoring
+    class WINSW,BAT,DOCKER,COMPOSE deployment

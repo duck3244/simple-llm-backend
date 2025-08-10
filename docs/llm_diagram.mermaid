@@ -1,0 +1,55 @@
+graph TD
+    A[SimpleApplication] --> B[ApiController]
+    A --> C[HealthController]
+    A --> D[LLMController]
+    A --> E[StatsController]
+    
+    B --> F[LLMService]
+    D --> F
+    C --> G[LLMConfig]
+    E --> H[LoggingService]
+    
+    F --> I[VllmService]
+    F --> J[SglangService]
+    F --> H
+    
+    I --> G
+    J --> G
+    I --> K[WebClientConfig]
+    J --> K
+    
+    G --> L[VllmConfig]
+    G --> M[SglangConfig]
+    G --> N[FailoverConfig]
+    
+    B --> O[LLMRequest]
+    B --> P[LLMResponse]
+    D --> O
+    D --> P
+    
+    I --> Q[vLLM Server]
+    J --> R[SGLang Server]
+    H --> S[Database]
+    
+    T[GlobalExceptionHandler] --> P
+    
+    style A fill:#ffcdd2
+    style B fill:#e1f5fe
+    style C fill:#e1f5fe
+    style D fill:#e1f5fe
+    style E fill:#e1f5fe
+    style F fill:#f3e5f5
+    style I fill:#f3e5f5
+    style J fill:#f3e5f5
+    style H fill:#f3e5f5
+    style G fill:#e8f5e8
+    style L fill:#e8f5e8
+    style M fill:#e8f5e8
+    style N fill:#e8f5e8
+    style K fill:#e8f5e8
+    style O fill:#fff3e0
+    style P fill:#fff3e0
+    style T fill:#fff3e0
+    style Q fill:#f1f8e9
+    style R fill:#f1f8e9
+    style S fill:#f1f8e9

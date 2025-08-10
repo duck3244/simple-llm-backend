@@ -1,0 +1,84 @@
+sequenceDiagram
+    participant Client as 클라이언트
+    participant API as ApiController
+    participant LLM as LLMService
+    participant VLLM as VllmService
+    participant SGL as SglangService
+    participant LOG as LoggingService
+    participant WC as WebClient
+    participant EXT as 외부 LLM 서버
+
+    Note over Client,EXT: LLM 추론 요청 플로우 (POST /api/generate)
+
+    Client->>+API: POST /api/generate
+    Note right of Client: LLMRequest:<br/>- prompt: "Hello"<br/>- engine: "vllm"<br/>- maxTokens: 100<br/>- temperature: 0.7
+
+    API->>+LLM: generateResponse(request)
+    
+    alt engine == "vllm"
+        LLM->>+VLLM: generate(request, startTime)
+        
+        VLLM->>VLLM: 설정 확인<br/>(enabled, baseUrl, timeout)
+        
+        VLLM->>+WC: WebClient 빌드
+        WC-->>-VLLM: WebClient 인스턴스
+        
+        VLLM->>VLLM: createRequestBody(request)
+        Note right of VLLM: vLLM 형식:<br/>{<br/>  "model": "default",<br/>  "prompt": "Hello",<br/>  "max_tokens": 100,<br/>  "temperature": 0.7<br/>}
+        
+        VLLM->>+EXT: POST /v1/completions
+        EXT-->>-VLLM: JSON 응답
+        
+        VLLM->>VLLM: extractText(response)
+        VLLM-->>-LLM: LLMResponse(성공)
+        
+    else engine == "sglang"
+        LLM->>+SGL: generate(request, startTime)
+        
+        SGL->>SGL: 설정 확인<br/>(enabled, baseUrl, timeout)
+        
+        SGL->>+WC: WebClient 빌드
+        WC-->>-SGL: WebClient 인스턴스
+        
+        SGL->>SGL: createRequestBody(request)
+        Note right of SGL: SGLang 형식:<br/>{<br/>  "text": "Hello",<br/>  "sampling_params": {<br/>    "max_new_tokens": 100,<br/>    "temperature": 0.7<br/>  }<br/>}
+        
+        SGL->>+EXT: POST /generate
+        EXT-->>-SGL: JSON 응답
+        
+        SGL->>SGL: extractText(response)
+        SGL-->>-LLM: LLMResponse(성공)
+    end
+
+    LLM->>+LOG: logLLMRequest(...)
+    Note right of LOG: DB 로깅:<br/>- engine, prompt<br/>- response, responseTime<br/>- success 여부
+    LOG-->>-LLM: 로깅 완료
+
+    LLM-->>-API: LLMResponse
+    
+    alt 성공 응답
+        API-->>Client: 200 OK + LLMResponse
+        Note left of Client: {<br/>  "text": "Hello! How can I help?",<br/>  "engine": "vllm",<br/>  "response_time_ms": 1250,<br/>  "success": true<br/>}
+    else 실패 응답
+        API-->>Client: 400 Bad Request + 에러 응답
+        Note left of Client: {<br/>  "success": false,<br/>  "error": "Service unavailable",<br/>  "response_time_ms": 100<br/>}
+    end
+
+    Note over Client,EXT: 헬스체크 플로우 (GET /api/health/detailed)
+
+    Client->>+API: GET /api/health/detailed
+    
+    API->>API: checkEngineHealth(vLLM URL)
+    API->>+WC: GET /health
+    WC->>+EXT: vLLM 헬스체크
+    EXT-->>-WC: 응답
+    WC-->>-API: 상태 결과
+    
+    API->>API: checkEngineHealth(SGLang URL)
+    API->>+WC: GET /health
+    WC->>+EXT: SGLang 헬스체크
+    EXT-->>-WC: 응답
+    WC-->>-API: 상태 결과
+    
+    API-->>-Client: 200 OK + 상세 헬스 정보
+    Note left of Client: {<br/>  "application": "UP",<br/>  "vllm": "UP",<br/>  "sglang": "DOWN",<br/>  "timestamp": 1234567890<br/>}
